@@ -113,6 +113,11 @@ class plgSystemLSCache extends CMSPlugin {
 
         $this->purgeObject = (object) array('tags' => array(), 'urls' => array(), 'option' => "", 'idField' => "", 'ids' => array(), 'purgeAll' => false, 'recacheAll' => false);
         $this->purgeObject->autoRecache = $this->settings->get('autoRecache', 0);
+
+        if( LITESPEED_SERVER_TYPE === 'LITESPEED_SERVER_OLS' )
+        {
+            $this->updateHtaccess();
+        }
     }
 
     /**
@@ -1921,6 +1926,21 @@ class plgSystemLSCache extends CMSPlugin {
         }
     }
 
+    private function updateHtaccess() {
+        $htaccess = JPATH_ROOT . '/.htaccess';
+
+        if (file_exists($htaccess)) {
+            $content = file_get_contents($htaccess);
+            if( preg_match('/##OLS##/',$content) ) {
+                $newContent = preg_replace('/(\sRewriteCond(.*?)"gzip")/', '##OLS##$1', $content);
+                $newContent = preg_replace('/(\sRewriteCond(.*?)gz" -s)/', '##OLS##$1', $newContent);
+                $newContent = preg_replace('/(\sRewriteRule(.*?)gz")/', '##OLS##$1', $newContent);
+                $newContent = preg_replace('/(\sRewriteRule(.*?)gz\$)/', '##OLS##$1', $newContent);
+
+                file_put_contents($htaccess, $newContent);
+            }
+        }
+    }
    
     protected function getVisitorIP() {
         $ip = '';
